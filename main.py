@@ -76,6 +76,10 @@ def getUser(current_user, token):
     user_data['email'] = user.email
     user_data['name'] = user.name
     user_data['age'] = user.age
+    user_data['token'] = []
+    print(type(user_data['token']))
+    for i in user.token:
+        user_data['token'].append(i.token)
     return jsonify({'user': user_data})
 
 
@@ -90,11 +94,25 @@ def changePassword(current_user, token):
     
     if check_password_hash(user.password, data['old_password']):
         if data.get('new_password'):
-            user.password = generate_password_hash(data['new_password'], 'sha256')
-            print(user.password)
-            user.save()
+            user.update(password = generate_password_hash(data['new_password'], 'sha256'))
+            user.reload()
             return jsonify({'message' : 'Password has changed'})
     return jsonify({'message' : 'Change password failed'})
+
+@app.route("/change_name", methods=["PUT"])
+@token_required
+def changename(current_user, token):
+    data = request.get_json()
+    userId = current_user.id
+    user = User.objects(id = userId).first()
+    if not user:
+        return jsonify({'message': "No user found!"})
+    
+    if data.get('new_name'):
+        user.update(name = data['new_name'])
+        user.reload()
+        return jsonify({'message':'Name has changed'})
+    return jsonify({'message':'Change name failed'})
 
 
 if __name__ == '__main__':
